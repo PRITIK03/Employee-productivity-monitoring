@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Pulse Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .chart-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .sentiment-positive { background: #dcfce7; color: #166534; }
+        .sentiment-neutral { background: #fef9c3; color: #854d0e; }
+        .sentiment-negative { background: #fee2e2; color: #991b1b; }
+        
+        .input-field {
+            @apply border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all;
+        }
+
+        .metric-card {
+            @apply p-4 rounded-xl text-center;
+        }
+
+        @keyframes slide-in {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen p-6">
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        <!-- Header Section -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] bg-clip-text text-transparent mb-3">
+                Productivity Pulse Pro
+            </h1>
+            <p class="text-gray-600 text-lg">AI-powered workforce optimization platform</p>
+        </div>
+
+        <!-- Role Selection -->
+        <div class="mb-8 flex justify-center gap-4">
+            <button onclick="toggleView('employee')" id="employeeBtn" class="px-6 py-2 rounded-full bg-indigo-100 text-indigo-600 font-medium transition-all hover:bg-indigo-200">
+                👤 Employee View
+            </button>
+            <button onclick="toggleView('organizer')" id="organizerBtn" class="px-6 py-2 rounded-full bg-emerald-100 text-emerald-600 font-medium transition-all hover:bg-emerald-200">
+                👥 Organizer View
+            </button>
+            <button onclick="toggleView('activity')" id="activityBtn" class="px-6 py-2 rounded-full bg-blue-100 text-blue-600 font-medium transition-all hover:bg-blue-200">
+                📊 Activity Monitor
+            </button>
+        </div>
+
+        <!-- Employee View -->
+        <div id="employee_view" class="space-y-8">
+            <!-- Task Logging Card -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Log New Task
+                </h2>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <input id="employee_id" type="text" placeholder="🔒 Anonymized ID" class="input-field">
+                    <input id="task_description" type="text" placeholder="📝 Task Description" class="input-field">
+                    <select id="task_category" class="input-field">
+                        <option value="">📂 Select Category...</option>
+                        <option value="Development">💻 Development</option>
+                        <option value="Meetings">📅 Meetings</option>
+                        <option value="Research">🔍 Research</option>
+                        <option value="Administration">📋 Administration</option>
+                        <option value="Other">✨ Other</option>
+                    </select>
+                    <input id="time_spent" type="number" step="0.1" min="0.1" placeholder="⏱️ Time Spent (hours)" class="input-field">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="collaborative" class="mr-2">
+                        <label for="collaborative" class="text-gray-700">Collaborative Task</label>
+                    </div>
+                    <select id="wellness" class="input-field">
+                        <option value="">😶 Select Wellness...</option>
+                        <option value="Stressed">😟 Stressed</option>
+                        <option value="Neutral">😐 Neutral</option>
+                        <option value="Relaxed">😊 Relaxed</option>
+                    </select>
+                    <button onclick="logTask()" class="md:col-span-2 bg-indigo-500 text-white py-3 rounded-xl font-medium hover:bg-indigo-600 transition-all">
+                        📤 Log Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- Prediction Card -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    AI Productivity Prediction
+                </h2>
+                <form action="/predict" method="POST" class="grid gap-4 md:grid-cols-2">
+                    <input type="number" step="0.01" name="efficiency" placeholder="🚀 Efficiency (0-1)" class="input-field" required>
+                    <input type="number" step="0.01" name="idle_ratio" placeholder="💤 Idle Ratio (0-1)" class="input-field" required>
+                    <input type="number" step="0.01" name="overtime_ratio" placeholder="🔥 Overtime (0-1)" class="input-field" required>
+                    <input type="number" step="1" name="team_size" placeholder="👥 Team Size" class="input-field" required>
+                    <input type="number" step="0.1" name="avg_sentiment" placeholder="😊 Sentiment (0-1)" class="input-field" required>
+                    <input type="number" step="1" name="msg_count" placeholder="💬 Message Count" class="input-field" required>
+                    <button type="submit" class="md:col-span-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all">
+                        🔮 Get Prediction
+                    </button>
+                </form>
+                
+                {% if result %}
+                <div class="mt-6 p-4 rounded-lg {{ 'sentiment-positive' if 'Efficient' in result else 'sentiment-neutral' if 'Moderate' in result else 'sentiment-negative' }}">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {% if 'Efficient' in result %}
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            {% elif 'Moderate' in result %}
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            {% else %}
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            {% endif %}
+                        </svg>
+                        <h3 class="font-semibold">Prediction Result:</h3>
+                        <span class="text-lg">{{ result }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Employee Dashboard -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Your Productivity Dashboard
+                </h2>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+                    <div class="metric-card bg-indigo-50">
+                        <div class="text-sm text-indigo-600">Total Tasks</div>
+                        <div class="text-2xl font-bold" id="emp_total_tasks">0</div>
+                    </div>
+                    <div class="metric-card bg-emerald-50">
+                        <div class="text-sm text-emerald-600">Avg Time/Task</div>
+                        <div class="text-2xl font-bold" id="emp_avg_time">0h</div>
+                    </div>
+                    <div class="metric-card bg-amber-50">
+                        <div class="text-sm text-amber-600">Completion Rate</div>
+                        <div class="text-2xl font-bold" id="emp_completion_rate">N/A</div>
+                    </div>
+                    <div class="metric-card bg-purple-50">
+                        <div class="text-sm text-purple-600">Wellness</div>
+                        <div class="text-2xl font-bold" id="emp_wellness">N/A</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="emp_productivity_chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Organizer View -->
+        <div id="organizer_view" class="hidden space-y-8">
+            <!-- Organizer Dashboard -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    Team Overview
+                </h2>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+                    <div class="metric-card bg-cyan-50">
+                        <div class="text-sm text-cyan-600">Team Members</div>
+                        <div class="text-2xl font-bold" id="total_employees">0</div>
+                    </div>
+                    <div class="metric-card bg-rose-50">
+                        <div class="text-sm text-rose-600">Total Tasks</div>
+                        <div class="text-2xl font-bold" id="org_total_tasks">0</div>
+                    </div>
+                    <div class="metric-card bg-lime-50">
+                        <div class="text-sm text-lime-600">Completion Rate</div>
+                        <div class="text-2xl font-bold" id="org_completion_rate">N/A</div>
+                    </div>
+                    <div class="metric-card bg-fuchsia-50">
+                        <div class="text-sm text-fuchsia-600">Wellness</div>
+                        <div class="text-2xl font-bold" id="org_wellness">N/A</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="org_productivity_chart"></canvas>
+                </div>
+                <div class="mt-6 flex gap-4">
+                    <button onclick="loadOrganizerInsights()" class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 transition-all">
+                        🔄 Refresh Data
+                    </button>
+                    <button onclick="addMockTasks()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all">
+                        📊 Add Mock Data
+                    </button>
+                    <button onclick="exportReport()" class="bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 transition-all">
+                        📥 Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Monitor View -->
+        <div id="activity_view" class="hidden space-y-8">
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m0 0V9m0 0h6m-6 0H3m12 0h6m-6 0v6m0 0v2m0-2h6m-6 0H9"/>
+                    </svg>
+                    Activity Monitor
+                </h2>
+                <div id="activity_content">
+                    <p>No activity data available.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="mt-8 p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
+            <p>🔒 <strong>Privacy First:</strong> All data is anonymized and stored locally in your browser. No personal information is collected or shared.</p>
+        </div>
+
+        <!-- Chatbot Section -->
+        <div id="chatbot" class="fixed bottom-4 right-4 w-80 bg-white shadow-lg rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">AI Assistant</h3>
+            <div id="chat_history" class="h-64 overflow-y-auto mb-2"></div>
+            <input type="text" id="chat_input" placeholder="Ask me anything..." class="w-full p-2 border rounded">
+            <button onclick="sendChatMessage()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Send</button>
+        </div>
+
+        <!-- Leaderboard Link -->
+        <div class="mt-4 text-center">
+            <a href="/leaderboard" class="text-indigo-600 font-medium hover:underline">View Top Employees Leaderboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Standard completion times (in hours)
+        const standardTimes = {
+            'Development': 2,
+            'Meetings': 1,
+            'Research': 3,
+            'Administration': 0.5,
+            'Other': 1
+        };
+
+        // Apps mapping for mock data
+        const apps = {
+            'Development': ['VS Code', 'GitHub', 'Jira', 'Slack'],
+            'Meetings': ['Zoom', 'Microsoft Teams', 'Slack'],
+            'Research': ['Browser', 'Google Docs', 'Notion'],
+            'Administration': ['Email', 'Calendar', 'Spreadsheet'],
+            'Other': ['Browser', 'Slack', 'Email']
+        };
+
+        // Initialize tasks from localStorage
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let empChart, orgChart, activityChart;
+        let currentEmployeeId = '';
+
+        // Toggle between views
+        function toggleView(role) {
+            const views = ['employee_view', 'organizer_view', 'activity_view'];
+            const buttons = ['employeeBtn', 'organizerBtn', 'activityBtn'];
+            views.forEach(view => document.getElementById(view).classList.add('hidden'));
+            buttons.forEach(btn => {
+                document.getElementById(btn).classList.remove('bg-indigo-100', 'text-indigo-600', 'bg-emerald-100', 'text-emerald-600', 'bg-blue-100', 'text-blue-600');
+            });
+
+            if (role === 'employee') {
+                document.getElementById('employee_view').classList.remove('hidden');
+                document.getElementById('employeeBtn').classList.add('bg-indigo-100', 'text-indigo-600');
+                loadEmployeeInsights();
+            } else if (role === 'organizer') {
+                document.getElementById('organizer_view').classList.remove('hidden');
+                document.getElementById('organizerBtn').classList.add('bg-emerald-100', 'text-emerald-600');
+                loadOrganizerInsights();
+            } else if (role === 'activity') {
+                document.getElementById('activity_view').classList.remove('hidden');
+                document.getElementById('activityBtn').classList.add('bg-blue-100', 'text-blue-600');
+                loadActivityMonitor();
+            }
+        }
+
+        // Sentiment analysis function
+        function analyzeSentiment(description) {
+            const positiveWords = ['good', 'great', 'excellent', 'happy', 'productive'];
+            const negativeWords = ['bad', 'poor', 'stressful', 'difficult', 'frustrating'];
+            let score = 0;
+            description.toLowerCase().split(' ').forEach(word => {
+                if (positiveWords.includes(word)) score += 1;
+                if (negativeWords.includes(word)) score -= 1;
+            });
+            return score > 0 ? 'Positive' : score < 0 ? 'Negative' : 'Neutral';
+        }
+
+        // Log a new task
+        async function logTask() {
+            const employeeId = document.getElementById('employee_id').value.trim();
+            const taskDescription = document.getElementById('task_description').value.trim();
+            const taskCategory = document.getElementById('task_category').value;
+            const timeSpent = parseFloat(document.getElementById('time_spent').value);
+            const collaborative = document.getElementById('collaborative').checked;
+            const wellness = document.getElementById('wellness').value;
+
+            if (!employeeId || !taskDescription || !taskCategory || isNaN(timeSpent) || timeSpent <= 0) {
+                showNotification('Please fill all required fields!', 'red');
+                return;
+            }
+
+            const sentiment = analyzeSentiment(taskDescription);
+            const task = {
+                employee_id: hashEmployeeId(employeeId),
+                task_description: taskDescription,
+                task_category: taskCategory,
+                time_spent: timeSpent,
+                collaborative: collaborative,
+                wellness: wellness || 'Neutral',
+                sentiment: sentiment,
+                timestamp: new Date().toISOString()
+            };
+
+            tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            
+            currentEmployeeId = employeeId;
+            showNotification('Task logged successfully!', 'green');
+            
+            // Send task data to Flask backend
+            try {
+                const response = await fetch('/log_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: employeeId,
+                        task_category: taskCategory,
+                        time_spent: timeSpent,
+                        wellness: wellness,
+                        sentiment: sentiment
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to log task on server');
+            } catch (error) {
+                console.error('Error logging task:', error);
+            }
+
+            document.getElementById('task_description').value = '';
+            document.getElementById('task_category').value = '';
+            document.getElementById('time_spent').value = '';
+            document.getElementById('collaborative').checked = false;
+            document.getElementById('wellness').value = '';
+            
+            loadEmployeeInsights();
+        }
+
+        // Hash employee ID
+        function hashEmployeeId(id) {
+            let hash = 0;
+            for (let i = 0; i < id.length; i++) {
+                hash = ((hash << 5) - hash) + id.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(36);
+        }
+
+        // Load employee insights
+        function loadEmployeeInsights() {
+            const hashedId = currentEmployeeId ? hashEmployeeId(currentEmployeeId) : null;
+            const empTasks = hashedId ? tasks.filter(task => task.employee_id === hashedId) : [];
+
+            if (empTasks.length === 0) {
+                document.getElementById('emp_total_tasks').textContent = '0';
+                document.getElementById('emp_avg_time').textContent = '0h';
+                document.getElementById('emp_completion_rate').textContent = 'N/A';
+                document.getElementById('emp_wellness').textContent = 'N/A';
+                updateEmployeeChart([], []);
+                return;
+            }
+
+            const totalTasks = empTasks.length;
+            const totalTime = empTasks.reduce((sum, task) => sum + task.time_spent, 0);
+            const avgTime = (totalTime / totalTasks).toFixed(2);
+            const onTimeTasks = empTasks.filter(task => task.time_spent <= standardTimes[task.task_category]).length;
+            const completionRate = totalTasks > 0 ? (onTimeTasks / totalTasks * 100).toFixed(1) + '%' : 'N/A';
+            const wellnessScores = empTasks.map(task => {
+                return task.wellness === 'Stressed' ? -1 : task.wellness === 'Relaxed' ? 1 : 0;
+            });
+            const avgWellness = wellnessScores.length > 0 ? wellnessScores.reduce((sum, score) => sum + score, 0) / wellnessScores.length : 0;
+            const wellnessText = avgWellness > 0 ? 'Relaxed' : avgWellness < 0 ? 'Stressed' : 'Neutral';
+
+            document.getElementById('emp_total_tasks').textContent = totalTasks;
+            document.getElementById('emp_avg_time').textContent = avgTime + 'h';
+            document.getElementById('emp_completion_rate').textContent = completionRate;
+            document.getElementById('emp_wellness').textContent = wellnessText;
+
+            const categories = [...new Set(empTasks.map(task => task.task_category))];
+            const categoryCounts = categories.map(cat => empTasks.filter(task => task.task_category === cat).length);
+            updateEmployeeChart(categories, categoryCounts);
+        }
+
+        // Update employee chart
+        function updateEmployeeChart(categories, counts) {
+            if (empChart) empChart.destroy();
+            const ctx = document.getElementById('emp_productivity_chart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.8)');
+            gradient.addColorStop(1, 'rgba(165, 180, 252, 0.2)');
+
+            empChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categories.length ? categories : ['No Data'],
+                    datasets: [{
+                        label: 'Tasks by Category',
+                        data: counts.length ? counts : [0],
+                        backgroundColor: gradient,
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#4f46e5'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', titleFont: { size: 14 } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#e2e8f0' },
+                            ticks: { color: '#64748b' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b' }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        // Load organizer insights
+        function loadOrganizerInsights() {
+            const uniqueEmployees = [...new Set(tasks.map(task => task.employee_id))].length;
+            const totalTasks = tasks.length;
+            const onTimeTasks = tasks.filter(task => task.time_spent <= standardTimes[task.task_category]).length;
+            const completionRate = totalTasks > 0 ? (onTimeTasks / totalTasks * 100).toFixed(1) + '%' : 'N/A';
+            const wellnessScores = tasks.map(task => {
+                return task.wellness === 'Stressed' ? -1 : task.wellness === 'Relaxed' ? 1 : 0;
+            });
+            const avgWellness = wellnessScores.length > 0 ? wellnessScores.reduce((sum, score) => sum + score, 0) / wellnessScores.length : 0;
+            const wellnessText = avgWellness > 0 ? 'Relaxed' : avgWellness < 0 ? 'Stressed' : 'Neutral';
+
+            document.getElementById('total_employees').textContent = uniqueEmployees;
+            document.getElementById('org_total_tasks').textContent = totalTasks;
+            document.getElementById('org_completion_rate').textContent = completionRate;
+            document.getElementById('org_wellness').textContent = wellnessText;
+
+            const categories = [...new Set(tasks.map(task => task.task_category))];
+            const categoryCounts = categories.map(cat => tasks.filter(task => task.task_category === cat).length);
+            updateOrganizerChart(categories, categoryCounts);
+        }
+
+        // Update organizer chart
+        function updateOrganizerChart(categories, counts) {
+            if (orgChart) orgChart.destroy();
+            const ctx = document.getElementById('org_productivity_chart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.8)');
+            gradient.addColorStop(1, 'rgba(110, 231, 183, 0.2)');
+
+            orgChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categories.length ? categories : ['No Data'],
+                    datasets: [{
+                        label: 'Team Tasks by Category',
+                        data: counts.length ? counts : [0],
+                        backgroundColor: gradient,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#059669'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', titleFont: { size: 14 } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#e2e8f0' },
+                            ticks: { color: '#64748b' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b' }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        // Generate mock activity data (fixed to normalize total time)
+        function generateActivityData(tasks) {
+            let appUsage = {};
+            let totalInactivity = 0;
+            let totalTaskTime = tasks.reduce((sum, task) => sum + task.time_spent, 0);
+
+            // Track app contributions
+            tasks.forEach(task => {
+                const taskApps = apps[task.task_category];
+                const numApps = Math.min(Math.floor(Math.random() * taskApps.length) + 1, taskApps.length);
+                const selectedApps = taskApps.slice(0, numApps);
+                const timePerApp = task.time_spent / numApps;
+                selectedApps.forEach(app => {
+                    appUsage[app] = (appUsage[app] || 0) + timePerApp;
+                });
+                const inactivity = Math.random() * 0.5; // Up to 30 minutes per task
+                totalInactivity += inactivity;
+            });
+
+            // Normalize app usage to match total task time
+            let currentTotal = Object.values(appUsage).reduce((sum, time) => sum + time, 0);
+            if (currentTotal > 0) {
+                const scaleFactor = totalTaskTime / currentTotal;
+                for (let app in appUsage) {
+                    appUsage[app] *= scaleFactor;
+                }
+            }
+
+            return { appUsage, totalInactivity };
+        }
+
+        // Load activity monitor
+        function loadActivityMonitor() {
+            // Check if there are tasks to generate activity data
+            if (tasks.length === 0) {
+                document.getElementById('activity_content').innerHTML = '<p>No activity data available.</p>';
+                return;
+            }
+
+            // Generate activity data
+            const { appUsage, totalInactivity } = generateActivityData(tasks);
+
+            // Validate app usage data
+            const appLabels = Object.keys(appUsage);
+            const appValues = Object.values(appUsage);
+            if (appLabels.length === 0 || appValues.every(val => val === 0)) {
+                document.getElementById('activity_content').innerHTML = '<p>No app usage data to display.</p>';
+                return;
+            }
+
+            // Create HTML content for the activity monitor
+            let tableHtml = '<h3 class="text-lg font-semibold mb-2">App Usage (Integrated from Workplace Tools)</h3>';
+            tableHtml += '<table class="w-full border-collapse mb-4"><thead><tr class="bg-blue-50"><th class="border p-2 text-left">App</th><th class="border p-2 text-left">Time Spent (hours)</th></tr></thead><tbody>';
+            for (const [app, time] of Object.entries(appUsage)) {
+                tableHtml += `<tr><td class="border p-2">${app}</td><td class="border p-2">${time.toFixed(2)}</td></tr>`;
+            }
+            tableHtml += '</tbody></table>';
+            tableHtml += `<h3 class="text-lg font-semibold mb-2">Total Mouse Inactivity</h3><p class="mb-4">${totalInactivity.toFixed(2)} hours</p>`;
+            tableHtml += '<div class="chart-container"><canvas id="app_usage_chart" style="max-height: 300px;"></canvas></div>';
+
+            // Update the DOM
+            const activityContent = document.getElementById('activity_content');
+            activityContent.innerHTML = tableHtml;
+
+            // Ensure the DOM is updated before initializing the chart
+            setTimeout(() => {
+                const canvas = document.getElementById('app_usage_chart');
+                if (!canvas) {
+                    console.error('Canvas element for app_usage_chart not found.');
+                    activityContent.innerHTML += '<p class="text-red-500 mt-2">Error: Unable to render app usage chart.</p>';
+                    return;
+                }
+
+                // Destroy previous chart instance if it exists
+                if (activityChart) {
+                    activityChart.destroy();
+                }
+
+                // Initialize the pie chart
+                try {
+                    const ctx = canvas.getContext('2d');
+                    activityChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: appLabels,
+                            datasets: [{
+                                label: 'App Usage (hours)',
+                                data: appValues,
+                                backgroundColor: [
+                                    '#6366f1', // Indigo
+                                    '#10b981', // Emerald
+                                    '#f59e0b', // Amber
+                                    '#ef4444', // Red
+                                    '#8b5cf6', // Purple
+                                    '#ec4899', // Pink
+                                    '#3b82f6'  // Blue
+                                ],
+                                borderColor: '#ffffff',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#1e293b',
+                                    titleFont: { size: 14 },
+                                    bodyFont: { size: 12 },
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            return `${label}: ${value.toFixed(2)} hours`;
+                                        }
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeOutQuart'
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error initializing app usage chart:', error);
+                    activityContent.innerHTML += '<p class="text-red-500 mt-2">Error: Failed to render app usage chart.</p>';
+                }
+            }, 0); // Zero delay ensures DOM update in the next tick
+        }
+
+        // Add mock tasks
+        function addMockTasks() {
+            const mockTasks = [
+                { employee_id: hashEmployeeId('emp1'), task_description: 'Code review session', task_category: 'Development', time_spent: 1.5, collaborative: true, wellness: 'Neutral' },
+                { employee_id: hashEmployeeId('emp2'), task_description: 'Team meeting', task_category: 'Meetings', time_spent: 0.5, collaborative: true, wellness: 'Relaxed' },
+                { employee_id: hashEmployeeId('emp3'), task_description: 'Research new tools', task_category: 'Research', time_spent: 2.0, collaborative: false, wellness: 'Stressed' }
+            ];
+            mockTasks.forEach(async task => {
+                task.timestamp = new Date().toISOString();
+                task.sentiment = analyzeSentiment(task.task_description);
+                tasks.push(task);
+                try {
+                    await fetch('/log_task', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            employee_id: task.employee_id,
+                            task_category: task.task_category,
+                            time_spent: task.time_spent,
+                            wellness: task.wellness,
+                            sentiment: task.sentiment
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error logging mock task:', error);
+                }
+            });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            loadOrganizerInsights();
+            showNotification('Mock tasks added!', 'blue');
+        }
+
+        // Export report
+        function exportReport() {
+            const headers = ['Employee ID', 'Task Description', 'Category', 'Time Spent (hours)', 'Collaborative', 'Wellness', 'Sentiment', 'Timestamp'];
+            const csv = [
+                headers.join(','),
+                ...tasks.map(task => [
+                    task.employee_id,
+                    `"${task.task_description.replace(/"/g, '""')}"`,
+                    task.task_category,
+                    task.time_spent,
+                    task.collaborative,
+                    task.wellness,
+                    task.sentiment,
+                    task.timestamp
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'productivity_report.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Notification system
+        function showNotification(message, color = 'indigo') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white bg-${color}-500 animate-slide-in`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Chatbot Functionality
+        async function sendChatMessage() {
+            const input = document.getElementById('chat_input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatHistory = document.getElementById('chat_history');
+            chatHistory.innerHTML += `<div class="text-right"><strong>You:</strong> ${message}</div>`;
+            input.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    chatHistory.innerHTML += `<div class="text-red-500">Error: ${data.error}</div>`;
+                } else {
+                    chatHistory.innerHTML += `<div><strong>AI Assistant:</strong> ${data.reply}</div>`;
+                }
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            } catch (error) {
+                chatHistory.innerHTML += `<div class="text-red-500">Error: Could not connect to server.</div>`;
+            }
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            toggleView('employee');
+            loadEmployeeInsights();
+        };
+    </script>
+</body>
+</html>
